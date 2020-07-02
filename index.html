@@ -1,0 +1,228 @@
+<!doctype html>
+<!-- Note that adding an appcache really speeds things up after the first load
+    You need to amend the appcache file to meet your needs.
+    Don't forget to change the appcache file if you update ANY
+    of the files in it otherwise the old versions will ALWAYS be used.
+<html lang="en" manifest="./uibuilder.appcache">
+-->
+<html lang="en">
+<!--
+    This is the default, template html for uibuilder.
+    It is meant to demonstrate the use of VueJS & bootstrap-vue to dynamically
+    update the ui based on incoming/outgoing messages from/to the
+    Node-RED server.
+
+    You will want to alter this to suite your own needs. To do so,
+    copy this file to <userDir>/uibuilder/<url>/src.
+-->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>Node-RED UI Builder</title>
+    <meta name="description" content="Node-RED UI Builder - VueJS + bootstrap-vue version">
+
+    <link rel="icon" href="./images/node-blue.ico">
+
+    <!-- See https://goo.gl/OOhYW5 -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#3f51b5">
+
+    <!-- Used if adding to homescreen for Chrome on Android. Fallback for manifest.json -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Node-RED UI Builder">
+
+    <!-- Used if adding to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Node-RED UI Builder">
+
+    <!-- Homescreen icons for Apple mobile use if required
+        <link rel="apple-touch-icon" href="./images/manifest/icon-48x48.png">
+        <link rel="apple-touch-icon" sizes="72x72" href="./images/manifest/icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="96x96" href="./images/manifest/icon-96x96.png">
+        <link rel="apple-touch-icon" sizes="144x144" href="./images/manifest/icon-144x144.png">
+        <link rel="apple-touch-icon" sizes="192x192" href="./images/manifest/icon-192x192.png">
+    -->
+
+    <link type="text/css" rel="stylesheet" href="../uibuilder/vendor/bootstrap/dist/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="../uibuilder/vendor/bootstrap-vue/dist/bootstrap-vue.css" />
+    
+    <link type="text/css" rel="stylesheet" href="./index.css" media="all">
+</head>
+<body>
+    
+    <div id="app">
+        
+        <nav class="navbar navbar-default navbar-fixed-top bg-light" style="justify-content: space-between">
+            <h1 class="navbar-brand mb-0 h1" style="text-align: center">Schneider electric administration pannel</h1>
+            <button class="btn btn-outline-secondary my-2 my-sm-0" type="submit" v-on:click="logout" v-if="authorised">Logout</button>
+        </nav>
+        
+        <b-container v-if="!authorised">
+            <form>
+              <div class="form-group login">
+                <label for="exampleInputUsername1">Username</label>
+                <input type="text" class="form-control" id="exampleInputUsername1">
+              </div>
+              <div class="form-group">
+                <label for="exampleInputPassword1">Password</label>
+                <input type="password" class="form-control" id="exampleInputPassword1">
+              </div>
+              <button type="submit" class="btn btn-primary" v-on:click="login">Submit</button>
+            </form>
+        </b-container>
+        
+        <b-container v-if="authorised">
+            
+            <b-row style="justify-content: space-around">
+                
+                <!-- Email list -->
+                <b-col class="mt-3 mb-3 border border-primary rounded list col-lg-5">
+                    <h2>Email addresses list</h2>
+                    <div class="input-group" style="margin-bottom:10px">
+                        <input v-model="email" id="email" class="form-control" placeholder="example@gmail.com" aria-describedby="basic-addon1" v-on:keyup.enter="addEmail"/>
+        	            <button v-on:click="addEmail" type="button" class="btn btn-primary">Add</button>
+                    </div>
+                    <ul class="list-group" name="emailList" id="emailList">
+                        
+                        <li v-if="emails" class="list-group-item d-flex justify-content-between align-items-center email" v-for="email in emails">
+                            {{ email }}
+                            <button type="button" class="btn btn-danger" v-on:click="remove">Remove</button>
+                        </li>
+                    </ul>
+                </b-col>
+                
+                <!-- Discord tag list -->
+                <b-col class="mt-3 mb-3 border border-primary rounded list col-lg-5">
+                    <h2>Discord names list</h2>
+                    
+                    <div class="input-group" style="margin-bottom:10px">
+                        <input v-model="discord" id="discord" class="form-control" placeholder="example#1234" aria-describedby="basic-addon1" v-on:keyup.enter="addDiscord"/>
+        	            <button v-on:click="addDiscord" type="button" class="btn btn-primary">Add</button>
+                    </div>
+                    <ul class="list-group" name="discordList" id="discordList">
+                        <li v-if="discords" class="list-group-item d-flex justify-content-between align-items-center discord" v-for="discord in discords">
+                            {{ discord }}
+                            <button type="button" class="btn btn-danger" v-on:click="remove">Remove</button>
+                        </li>
+                    </ul>
+                </b-col>
+            
+            </b-row>
+            
+            <b-row style="justify-content: center">
+                <b-col class="mt-3 mb-3 col-lg-11 border border-primary rounded" style="padding:10px; margin:10px">
+                    
+                    <h2>System variabels</h2>
+                    <label for="maxTemp">Max temperature [{{ lBound }}..{{ rBound }}]</label>
+                    <div class="input-group maxTemp" name="maxTemp" style="margin: 1px">
+                      <div class="input-group-prepend" name="maxTemp" id="maxTemp">
+                        <span class="input-group-text" id="basic-addon1">{{ currentMaxTemp }}</span>
+                      </div>
+                      <input v-model="maxTemp" type="text" class="form-control" placeholder="Max temperature" aria-label="Username" aria-describedby="basic-addon1" v-on:keyup.enter="saveTemp">
+                      <button v-on:click="saveTemp" type="button" class="btn btn-primary">Save value</button>
+                    </div>
+                    
+                    <br />
+                    
+                    <label for="minTemp">Min temperatrue [{{ lBound }}..{{ rBound }}]</label>
+                    <div class="input-group minTemp" name="minTemp">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon1">{{ currentMinTemp }}</span>
+                      </div>
+                      <input v-model="minTemp" type="text" class="form-control" placeholder="Min temperature" aria-label="Username" aria-describedby="basic-addon1" v-on:keyup.enter="saveTemp">
+                      <button v-on:click="saveTemp" type="button" class="btn btn-primary">Save value</button>
+                    </div>
+                    
+                    <br />
+                    
+                    <label for="interval_1">Set value for first group of sensors</label>
+                    <div class="input-group interval_1" name="interval_1" style="margin: 1px">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon1">{{ current_interval_value_1.concat(current_interval_unit_1) }}</span>
+                      </div>
+                      <input v-model="interval_value_1" type="text" class="form-control" placeholder="Interval value" aria-describedby="basic-addon1">
+                      <input v-model="interval_unit_1" type="text" class="form-control" placeholder="ms/s/m/h" aria-describedby="basic-addon1">
+                      <button v-on:click="setInterval" type="button" class="btn btn-primary">Set interval</button>
+                    </div>
+                    
+                    <label for="interval_2">Set value for second group of sensors</label>
+                    <div class="input-group interval_2" name="interval_2" style="margin: 1px">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon2">{{ current_interval_value_2.concat(current_interval_unit_2) }}</span>
+                      </div>
+                      <input v-model="interval_value_2" type="text" class="form-control" placeholder="Interval value" aria-describedby="basic-addon1">
+                      <input v-model="interval_unit_2" type="text" class="form-control" placeholder="ms/s/m/h" aria-describedby="basic-addon1">
+                      <button v-on:click="setInterval" type="button" class="btn btn-primary">Set interval</button>
+                    </div>
+                    
+                    <label for="interval_3">Set value for third group of sensors</label>
+                    <div class="input-group interval_3" name="interval_3" style="margin: 1px">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon1">{{ current_interval_value_3.concat(current_interval_unit_3) }}</span>
+                      </div>
+                      <input v-model="interval_value_3" type="text" class="form-control" placeholder="Interval value" aria-describedby="basic-addon1">
+                      <input v-model="interval_unit_3" type="text" class="form-control" placeholder="ms/s/m/h" aria-describedby="basic-addon1">
+                      <button v-on:click="setInterval" type="button" class="btn btn-primary">Set interval</button>
+                    </div>
+                    
+                    <label for="interval_aveva">Set value for aveva intervals</label>
+                    <div class="input-group interval_aveva" name="interval_aveva" style="margin: 1px">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon1">{{ current_interval_value_aveva.concat(current_interval_unit_aveva) }}</span>
+                      </div>
+                      <input v-model="interval_value_aveva" type="text" class="form-control" placeholder="Interval value" aria-describedby="basic-addon1">
+                      <input v-model="interval_unit_aveva" type="text" class="form-control" placeholder="ms/s/m/h" aria-describedby="basic-addon1">
+                      <button v-on:click="setInterval" type="button" class="btn btn-primary">Set interval</button>
+                    </div>
+                    
+                </b-col>
+            </b-row>
+                
+            <b-row style="justify-content: center">    
+                <b-col class="mt-3 mb-3 col-lg-11 border border-primary rounded" style="padding:10px; margin:10px">
+                    <h2>Sensor list</h2>
+                        <div class="input-group" style="margin-bottom:10px">
+                            <input v-model="name_dev" id="name_dev" type="text" class="form-control" placeholder="example_0" aria-describedby="basic-addon1"/>
+                            <input v-model="address" id="address" type="text" class="form-control" placeholder="0000" aria-describedby="basic-addon1"/>
+                            <input v-model="type" id="type" type="number" min="1" max="3" class="form-control" aria-describedby="basic-addon1"/>
+        	                <button v-on:click="addSensor" type="button" class="btn btn-primary">Add</button>
+                        </div>
+                    <ul class="list-group" name="sensorList" id="sensorList">
+                        <li v-if="sensors" class="list-group-item d-flex justify-content-between align-items-center sensor" v-for="sensor in sensors">
+                            <span class="name">{{ sensor.name_dev }}</span>
+                            <span>{{ sensor.address }}</span>
+                            <span>{{ sensor.type }}</span>
+                            <button type="button" class="btn btn-danger" v-on:click="removeSensor">Remove</button>
+                        </li>
+                    </ul>
+                </b-col>
+                
+            </b-row>
+            
+        </b-container>
+		
+	</div>
+
+    <!-- These MUST be in the right order. Note no leading / -->
+    <!-- REQUIRED: Socket.IO is loaded only once for all instances
+                     Without this, you don't get a websocket connection -->
+    <script src="../uibuilder/vendor/socket.io/socket.io.js"></script>
+
+    <!-- --- Vendor Libraries - Load in the right order --- -->
+    <script src="../uibuilder/vendor/vue/dist/vue.js"></script> <!-- dev version with component compiler -->
+    <!-- <script src="../uibuilder/vendor/vue/dist/vue.min.js"></script>   prod version with component compiler -->
+    <!-- <script src="../uibuilder/vendor/vue/dist/vue.runtime.min.js"></script>   prod version without component compiler -->
+    <script src="../uibuilder/vendor/bootstrap-vue/dist/bootstrap-vue.js"></script>
+
+    <!-- REQUIRED: Sets up Socket listeners and the msg object -->
+    <!-- <script src="./uibuilderfe.js"></script>   //dev version -->
+    <script src="./uibuilderfe.min.js"></script> <!--    //prod version -->
+    <!-- OPTIONAL: You probably want this. Put your custom code here -->
+    <script src="./index.js"></script>
+
+</body>
+
+</html>

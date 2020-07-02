@@ -1,0 +1,43 @@
+/* Cloak elements on initial load to hide the possible display of {{ ... }} 
+ * Add to the app tag or to specific tags
+ * To display "loading...", change to the following:
+ *    [v-cloak] > * { display:none }
+ *    [v-cloak]::before { content: "loadingРІР‚В¦" }
+ */
+ [v-cloak] { display: none; }
+
+ /*  Colours for Syntax Highlighted pre's */
+ .syntax-highlight {color:white;background-color:black;padding:5px 10px;}
+ .syntax-highlight > .key {color:#ffbf35}
+ .syntax-highlight > .string {color:#5dff39;}
+ .syntax-highlight > .number {color:#70aeff;}
+ .syntax-highlight > .boolean {color:#b993ff;}
+ .list-group{
+     height: 300px;
+     margin-bottom: 10px;
+     overflow:scroll;
+     -webkit-overflow-scrolling: touch;
+ }
+ .list{
+     padding: 10px;
+     margin: 10px;
+ }
+ 
+ .table-fixed thead {
+   width: 97%;
+ }
+ .table-fixed tbody {
+   height: 300px;
+   overflow-y: auto;
+   width: 100%;
+ }
+ .table-fixed thead, .table-fixed tbody, .table-fixed tr, .table-fixed td, .table-fixed th {
+   display: block;
+ }
+ .table-fixed tbody td, .table-fixed thead > tr> th {
+   float: left;
+   border-bottom-width: 0;
+ }
+ .list-group {
+     overflow-x: hidden;
+ }

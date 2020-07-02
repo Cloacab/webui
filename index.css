@@ -2,7 +2,7 @@
  * Add to the app tag or to specific tags
  * To display "loading...", change to the following:
  *    [v-cloak] > * { display:none }
- *    [v-cloak]::before { content: "loadingРІР‚В¦" }
+ *    [v-cloak]::before { content: "loading…" }
  */
  [v-cloak] { display: none; }
 
@@ -40,4 +40,26 @@
  }
  .list-group {
      overflow-x: hidden;
+ }
+ 
+ .sensor_list span{
+     width: 80px;
+     
+     /*text-overflow: clip;*/
+     /*word-break: break-all;*/
+     
+     white-space: nowrap;
+     overflow: hidden;
+     text-overflow: ellipsis;
+ }
+ 
+ #copy {
+     width: 150px;
+ }
+ .sensor_list span:hover{
+     white-space: normal;
+     overflow: visible;
+     text-overflow: clip;
+     word-break: break-all;
+     
  }
